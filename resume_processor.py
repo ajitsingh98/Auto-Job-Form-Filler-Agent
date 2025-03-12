@@ -12,21 +12,22 @@ from llama_index.core import (
     ServiceContext
 )
 from llama_index.embeddings.huggingface import HuggingFaceEmbedding
-from helper import get_llama_cloud_api_key
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 class ResumeProcessor:
-    def __init__(self, storage_dir: str = "resume_index"):
+    def __init__(self, storage_dir: str = "resume_index", llama_cloud_api_key: str = None):
         """
         Initialize resume processor.
         
         Args:
             storage_dir: Directory where the processed index will be stored
+            llama_cloud_api_key: API key for Llama Cloud services
         """
         self.storage_dir = Path(storage_dir)
         self.storage_dir.mkdir(parents=True, exist_ok=True)
+        self.llama_cloud_api_key = llama_cloud_api_key
         
         # Initialize embedding model
         self.embed_model = HuggingFaceEmbedding(
@@ -44,6 +45,13 @@ class ResumeProcessor:
             Dict containing status and any error messages
         """
         try:
+            # Check for API key
+            if not self.llama_cloud_api_key:
+                return {
+                    "success": False,
+                    "error": "Llama Cloud API key is required"
+                }
+
             # Handle file input
             file_path = self._get_file_path(file_input)
             if not file_path:
@@ -55,7 +63,7 @@ class ResumeProcessor:
             # Parse document
             try:
                 documents = LlamaParse(
-                    api_key=get_llama_cloud_api_key(),
+                    api_key=self.llama_cloud_api_key,
                     result_type='markdown',
                     system_prompt="this is a resume, gather related facts together and format it as bullet points with header"
                 ).load_data(file_path)
@@ -69,7 +77,7 @@ class ResumeProcessor:
             try:
                 index = VectorStoreIndex.from_documents(
                     documents,
-                    embed_model= HuggingFaceEmbedding(model_name="sentence-transformers/all-mpnet-base-v2")
+                    embed_model=self.embed_model
                 )
                 index.storage_context.persist(persist_dir=self.storage_dir)
                 
@@ -91,9 +99,9 @@ class ResumeProcessor:
             }
         finally:
             # Clean up temporary file if it was downloaded from Google Drive
-            if file_path.startswith("https://drive.google.com"):
+            if isinstance(file_path, str) and file_path.startswith("https://drive.google.com"):
                 try:
-                    Path(actual_file_path).unlink()
+                    Path(file_path).unlink()
                 except Exception as e:
                     logger.warning(f"Failed to delete temporary file: {str(e)}")
 

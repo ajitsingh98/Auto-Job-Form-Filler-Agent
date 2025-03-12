@@ -21,7 +21,7 @@ nest_asyncio.apply()
 def initialize_session_state():
     """Initialize all session state variables"""
     if 'resume_processor' not in st.session_state:
-        st.session_state.resume_processor = ResumeProcessor(storage_dir="resume_indexes")
+        st.session_state.resume_processor = None  # Initialize as None first
     if 'form_handler' not in st.session_state:
         st.session_state.form_handler = None
     if 'workflow' not in st.session_state:
@@ -265,6 +265,11 @@ def main():
         )
         if llama_cloud_key:
             st.session_state.llama_cloud_key = llama_cloud_key
+            # Initialize or update resume processor with new API key
+            st.session_state.resume_processor = ResumeProcessor(
+                storage_dir="resume_indexes",
+                llama_cloud_api_key=llama_cloud_key
+            )
             
         # Model Selection
         st.markdown("### 🤖 Model Selection")
