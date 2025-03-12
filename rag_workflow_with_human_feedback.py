@@ -13,8 +13,6 @@ from llama_index.llms.openrouter import OpenRouter
 import nest_asyncio
 from resume_processor import ResumeProcessor
 nest_asyncio.apply()
-
-from helper import get_llama_cloud_api_key, get_openrouter_api_key
 from llama_index.core import (
     VectorStoreIndex,
     Settings,

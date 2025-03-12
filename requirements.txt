@@ -24,3 +24,4 @@ pi-heif>=0.15.0
 Pillow>=10.0.0
 nest-asyncio>=1.6.0 
 llama-index-llms-openrouter>=0.1.0
+llama-index-embeddings-huggingface>=0.1.0
