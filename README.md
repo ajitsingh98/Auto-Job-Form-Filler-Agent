@@ -122,10 +122,10 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📧 Contact
 
-Your Name - [@yourtwitter](https://twitter.com/yourtwitter) - email@example.com
+Your Name - [@Ajit](https://x.com/bayesian_walker) - sajit9285@gmail.com
 
-Project Link: [https://github.com/yourusername/Auto-Job-Form-Filler-Agent](https://github.com/yourusername/Auto-Job-Form-Filler-Agent)
+Project Link: [https://github.com/ajitsingh98/Auto-Job-Form-Filler-Agent](https://github.com/ajitsingh98/Auto-Job-Form-Filler-Agent)
 
 ---
 
-Made with ❤️ by [Your Name]
+Made with ❤️ by Ajit
