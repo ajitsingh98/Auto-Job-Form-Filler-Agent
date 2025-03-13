@@ -88,6 +88,40 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
+## Limitations
+
+1. **Form Complexity**:
+   - Maximum 20 form questions supported
+   - Limited to standard Google Forms fields
+   - No support for file uploads
+
+2. **File Requirements**:
+   - PDF files only
+   - Maximum 10MB file size
+   - Clear, readable format
+
+3. **Technical Requirements**:
+   - Stable internet connection
+   - Valid API keys
+   - Modern web browser
+
+## Future Improvements
+
+1. **Enhanced AI Models**:
+   - Support for more AI models
+   - Improved information extraction
+   - Better context understanding
+
+2. **Additional Features**:
+   - Support for more form types
+   - Batch application processing
+   - Custom field mapping
+
+3. **User Experience**:
+   - Mobile optimization
+   - Offline support
+   - Custom templates
+
 ## Acknowledgments 🙏
 
 - [OpenRouter](https://openrouter.ai/) for AI model access
