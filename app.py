@@ -152,6 +152,13 @@ def display_progress_bar():
     st.progress(progress)
     st.caption(f"Step {st.session_state.current_step + 1} of {len(steps)}: {steps[st.session_state.current_step]}")
 
+def add_back_button():
+    """Add a back button to navigate to the previous step."""
+    if st.session_state.current_step > 0:
+        if st.button("← Back", key=f"back_{st.session_state.current_step}"):
+            st.session_state.current_step -= 1
+            st.rerun()
+
 async def run_workflow(form_data):
     """
     Run the RAG workflow with human feedback integration.
@@ -546,6 +553,9 @@ def main():
     # Display progress bar
     display_progress_bar()
     
+    # Add back button at the top of each step
+    add_back_button()
+    
     # Step 1: Resume Upload
     if st.session_state.current_step == 0:
         st.header("Step 1: Upload Resume")
@@ -663,7 +673,36 @@ def main():
                     try:
                         logger.info("Attempting to submit form to URL: %s", st.session_state.form_url)
                         form_handler = GoogleFormHandler(url=st.session_state.form_url)
-                        success = form_handler.submit_form(form_data)
+                        
+                        # Validate form data structure
+                        if not isinstance(form_data, dict):
+                            st.error("Invalid form data structure. Please try again.")
+                            logger.error("Form data is not a dictionary")
+                            return
+                            
+                        # Ensure all required fields are present and properly formatted
+                        required_fields = form_handler.get_form_questions_df(only_required=True)
+                        missing_fields = []
+                        formatted_data = {}
+                        
+                        for _, row in required_fields.iterrows():
+                            field_id = row['Entry_ID']
+                            if field_id not in form_data or not form_data[field_id]:
+                                missing_fields.append(row['Question'])
+                            else:
+                                # Format the field ID to match Google Forms format
+                                if field_id.startswith('entry.'):
+                                    formatted_data[field_id] = form_data[field_id]
+                                else:
+                                    formatted_data[f'entry.{field_id}'] = form_data[field_id]
+                                
+                        if missing_fields:
+                            st.error(f"Missing required fields: {', '.join(missing_fields)}")
+                            logger.error(f"Missing required fields: {missing_fields}")
+                            return
+                        
+                        # Submit the form with formatted data
+                        success = form_handler.submit_form(formatted_data)
                         
                         if success:
                             st.success("🎉 Application submitted successfully!")
