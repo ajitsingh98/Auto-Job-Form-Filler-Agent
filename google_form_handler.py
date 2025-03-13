@@ -206,8 +206,10 @@ class GoogleFormHandler:
         res = requests.post(url, data=data, timeout=5)
         if res.status_code == 200:
             print("Successfully submitted the form")
+            return True
         else:
             print("Error! Can't submit form", res.status_code)
+            return False
 
 
 if __name__ == "__main__":

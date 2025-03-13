@@ -44,6 +44,9 @@ class ResumeProcessor:
         Returns:
             Dict containing status and any error messages
         """
+        # Initialize file_path to None to avoid UnboundLocalError
+        file_path = None
+        
         try:
             # Check for API key
             if not self.llama_cloud_api_key:
@@ -99,7 +102,7 @@ class ResumeProcessor:
             }
         finally:
             # Clean up temporary file if it was downloaded from Google Drive
-            if isinstance(file_path, str) and file_path.startswith("https://drive.google.com"):
+            if file_path and isinstance(file_path, str) and file_path.startswith("https://drive.google.com"):
                 try:
                     Path(file_path).unlink()
                 except Exception as e:

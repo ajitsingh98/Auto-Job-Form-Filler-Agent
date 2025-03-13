@@ -49,6 +49,8 @@ def initialize_session_state():
         st.session_state.final_form_filled = None
     if 'selected_model' not in st.session_state:
         st.session_state.selected_model = None
+    if 'form_url' not in st.session_state:
+        st.session_state.form_url = None
     # Add feedback-specific state variables
     if 'feedback_submitted' not in st.session_state:
         st.session_state.feedback_submitted = False
@@ -58,6 +60,11 @@ def initialize_session_state():
         st.session_state.feedback_count = 0
     if 'last_event_type' not in st.session_state:
         st.session_state.last_event_type = None
+    if 'waiting_for_feedback' not in st.session_state:
+        st.session_state.waiting_for_feedback = False
+    # Add feedback states container
+    if 'feedback_states' not in st.session_state:
+        st.session_state.feedback_states = {}
 
 # Define available OpenRouter models
 OPENROUTER_MODELS = {
@@ -134,6 +141,12 @@ async def run_workflow(form_data):
             logger.info("Created new workflow instance")
             # Also reset the workflow handler when creating new workflow
             st.session_state.workflow_handler = None
+            # Reset feedback state
+            st.session_state.feedback_count = 0
+            st.session_state.current_feedback = None
+            st.session_state.last_event_type = None
+            st.session_state.waiting_for_feedback = False
+            st.session_state.feedback_submitted = False
 
         # Create or get workflow handler
         if st.session_state.workflow_handler is None:
@@ -145,7 +158,102 @@ async def run_workflow(form_data):
                 llama_cloud_key=st.session_state.llama_cloud_key,
                 selected_model=st.session_state.selected_model
             )
+            logger.info("Created new workflow handler")
 
+        # Check if we're waiting for feedback
+        if st.session_state.get('waiting_for_feedback', False):
+            logger.info("Waiting for feedback from user")
+            
+            # Create unique keys for feedback
+            feedback_key = f"feedback_{st.session_state.feedback_count}"
+            submit_key = f"submit_{feedback_key}"
+            # Display the form data
+            st.subheader("📝 Form Responses")
+            
+            # Display each answer
+            if st.session_state.filled_form and "display" in st.session_state.filled_form and "answers" in st.session_state.filled_form["display"]:
+                for answer in st.session_state.filled_form["display"]["answers"]:
+                    with st.expander(f"Question: {answer['question']}", expanded=True):
+                        st.write("**Entry ID:** ", answer["entry_id"])
+                        st.write("**Answer:** ", answer["answer"])
+                        st.divider()
+            
+            # Get feedback
+            feedback = st.text_area(
+                "Review the filled form and provide any feedback:",
+                key=feedback_key,
+                help="If the answers look correct, just write 'OK'. Otherwise, provide specific feedback for improvement."
+            )
+            
+            # Show current feedback value
+            if feedback:
+                st.info(f"Current feedback text: {feedback}")
+            
+            # Add a container for feedback submission status
+            status_container = st.empty()
+            
+            # Handle feedback submission with a button
+            submit_clicked = st.button(
+                "Submit Feedback",
+                key=submit_key,
+                type="primary",
+                use_container_width=True
+            )
+            if submit_clicked:
+                if not feedback:
+                    status_container.warning("⚠️ Please provide feedback before submitting.")
+                else:
+                    try:
+                        status_container.info("🔄 Processing feedback...")
+                        logger.info(f"Submitting feedback #{st.session_state.feedback_count}: {feedback}")
+                        
+                        # Store current feedback
+                        st.session_state.current_feedback = feedback
+                        
+                        # Mark feedback as submitted
+                        st.session_state.feedback_submitted = True
+                        st.session_state.waiting_for_feedback = False
+                        
+                        # Force a rerun to continue the workflow
+                        time.sleep(0.5)  # Brief pause to show the message
+                        st.rerun()
+                        
+                    except Exception as e:
+                        error_msg = f"Error preparing feedback: {str(e)}"
+                        logger.error(error_msg)
+                        status_container.error(f"❌ {error_msg}")
+            
+            # If feedback is not submitted yet, we need to wait
+            if not st.session_state.get('feedback_submitted', False):
+                return None
+        
+        # If feedback was submitted, send it to the workflow
+        if st.session_state.get('feedback_submitted', False):
+            try:
+                logger.info(f"Sending feedback to workflow: {st.session_state.current_feedback}")
+                # Send feedback event
+                st.session_state.workflow_handler.ctx.send_event(
+                    HumanResponseEvent(
+                        response=st.session_state.current_feedback
+                    )
+                )
+                # Reset feedback state
+                st.session_state.feedback_submitted = False
+                st.session_state.feedback_count += 1
+                
+                # Continue with the workflow
+                logger.info("Feedback sent, continuing workflow")
+                
+            except Exception as e:
+                logger.error(f"Error sending feedback: {str(e)}", exc_info=True)
+                st.error(f"Error sending feedback: {str(e)}")
+                # Reset feedback state
+                st.session_state.feedback_submitted = False
+                st.session_state.waiting_for_feedback = True
+                return None
+        
+        # Process events
+        final_result = None
         try:
             async for event in st.session_state.workflow_handler.stream_events():
                 logger.info("Received event type: %s", type(event).__name__)
@@ -158,135 +266,121 @@ async def run_workflow(form_data):
                     # Store form data
                     st.session_state.filled_form = result_data
                     
-                    # Display the form data
-                    st.subheader("📝 Form Responses")
+                    # Set waiting for feedback flag
+                    st.session_state.waiting_for_feedback = True
                     
-                    # Display each answer
-                    for answer in result_data["display"]["answers"]:
-                        with st.expander(f"Question: {answer['question']}", expanded=True):
-                            st.write("**Entry ID:** ", answer["entry_id"])
-                            st.write("**Answer:** ", answer["answer"])
-                            st.divider()
+                    # Force a rerun to show the feedback form
+                    st.rerun()
                     
-                    # Create unique keys for feedback
-                    feedback_key = f"feedback_{st.session_state.feedback_count}"
-                    submit_key = f"submit_{feedback_key}"
-                    
-                    # Debug section at the top
-                    st.markdown("### 🔍 Debug Information")
-                    col1, col2 = st.columns(2)
-                    with col1:
-                        st.write("Current State:")
-                        st.json({
-                            "feedback_count": st.session_state.feedback_count,
-                            "last_event_type": st.session_state.last_event_type,
-                            "current_feedback": st.session_state.current_feedback
-                        })
-                    
-                    # Get feedback
-                    feedback = st.text_area(
-                        "Review the filled form and provide any feedback:",
-                        key=feedback_key,
-                        help="If the answers look correct, just write 'OK'. Otherwise, provide specific feedback for improvement."
-                    )
-                    
-                    # Show current feedback value
-                    if feedback:
-                        st.info(f"Current feedback text: {feedback}")
-                    
-                    # Add a container for feedback submission status
-                    status_container = st.empty()
-                    
-                    # Handle feedback submission with a button
-                    col1, col2, col3 = st.columns([2,1,2])
-                    with col2:
-                        submit_clicked = st.button(
-                            "Submit Feedback",
-                            key=submit_key,
-                            type="primary",
-                            use_container_width=True
-                        )
-                    
-                    # Show button state (read-only)
-                    with col2:
-                        st.write("Button state:", "Clicked" if submit_clicked else "Not clicked")
-                    
-                    if submit_clicked:
-                        if not feedback:
-                            status_container.warning("⚠️ Please provide feedback before submitting.")
-                        else:
-                            try:
-                                status_container.info("🔄 Processing feedback...")
-                                logger.info(f"Submitting feedback #{st.session_state.feedback_count}: {feedback}")
-                                
-                                # Store current feedback and increment counter
-                                st.session_state.current_feedback = feedback
-                                st.session_state.feedback_count += 1
-                                
-                                # Send feedback event
-                                await st.session_state.workflow_handler.ctx.send_event(
-                                    HumanResponseEvent(
-                                        response=feedback
-                                    )
-                                )
-                                
-                                status_container.success("✅ Feedback submitted successfully!")
-                                logger.info("Feedback submitted successfully, triggering rerun")
-                                time.sleep(1)  # Give time for the success message to be visible
-                                st.rerun()
-                                
-                            except Exception as e:
-                                error_msg = f"Error submitting feedback: {str(e)}"
-                                logger.error(error_msg)
-                                status_container.error(f"❌ {error_msg}")
-                    
-                    # Break to prevent multiple feedback forms
-                    break
+                    # This return is just a placeholder, the rerun will interrupt execution
+                    return None
                     
                 elif isinstance(event, StopEvent):
                     logger.info("Received StopEvent - workflow complete")
-                    if hasattr(event, 'result'):
+                    if hasattr(event, 'result') and event.result is not None:
                         try:
-                            parsed_result = json.loads(event.result)
-                            logger.info("Successfully parsed final result")
-                            st.session_state.final_form_filled = parsed_result
+                            # Handle string or dict result
+                            if isinstance(event.result, str):
+                                try:
+                                    final_result = json.loads(event.result)
+                                    logger.info("Successfully parsed JSON result")
+                                except json.JSONDecodeError:
+                                    logger.warning("Result is not valid JSON, using as raw string")
+                                    final_result = {"error": "Failed to parse result as JSON", "raw": event.result}
+                            elif isinstance(event.result, dict):
+                                final_result = event.result
+                                logger.info("Result is already a dictionary")
+                            else:
+                                logger.error(f"Unexpected result type: {type(event.result)}")
+                                final_result = {"error": f"Unexpected result type: {type(event.result)}"}
+                                
+                            logger.info(f"Final result structure: {type(final_result)}")
+                            if isinstance(final_result, dict):
+                                logger.info(f"Final result keys: {final_result.keys()}")
+                            
+                            # Update session state with final result
+                            st.session_state.filled_form = final_result
+                            st.session_state.final_form_filled = final_result
                             st.session_state.current_step += 1
+                            
                             # Clear workflow state
                             st.session_state.workflow = None
                             st.session_state.workflow_handler = None
-                            st.session_state.feedback_count = 0
-                            return event.result
-                        except json.JSONDecodeError as e:
-                            logger.error("Error parsing final result: %s", str(e))
-                            st.error("Error processing the final form data. Please try again.")
+                            st.session_state.waiting_for_feedback = False
+                            st.session_state.feedback_submitted = False
+                            
+                            # Force a rerun to move to the next step
+                            st.rerun()
+                            
+                            return final_result
+                            
+                        except Exception as e:
+                            logger.error(f"Error processing final result: {str(e)}", exc_info=True)
+                            st.error(f"Error processing the final form data: {str(e)}")
                             return None
+                    else:
+                        logger.warning("StopEvent received with no result")
+                        st.warning("No final result received. Please try again.")
+                        return None
             
-            # Get final result if we've exhausted all events
-            final_result = await st.session_state.workflow_handler
-            logger.info("Workflow completed with final result: %s", final_result)
+            # If we get here, the event stream ended without a StopEvent
+            logger.info("Event stream ended without StopEvent")
             
-            if final_result and isinstance(final_result, str):
-                try:
-                    parsed_result = json.loads(final_result)
-                    logger.info("Successfully parsed final result")
-                    st.session_state.final_form_filled = parsed_result
+            # Try to get the final result directly from the handler
+            try:
+                direct_result = await st.session_state.workflow_handler
+                logger.info(f"Got direct result from handler: {direct_result}")
+                
+                if direct_result:
+                    if isinstance(direct_result, str):
+                        try:
+                            final_result = json.loads(direct_result)
+                            logger.info("Successfully parsed direct result JSON")
+                        except json.JSONDecodeError:
+                            logger.warning("Direct result is not valid JSON, using as raw string")
+                            final_result = {"error": "Failed to parse direct result as JSON", "raw": direct_result}
+                    elif isinstance(direct_result, dict):
+                        final_result = direct_result
+                        logger.info("Direct result is already a dictionary")
+                    else:
+                        logger.warning(f"Unexpected direct result type: {type(direct_result)}")
+                        final_result = {"error": f"Unexpected direct result type: {type(direct_result)}"}
+                    
+                    logger.info(f"Direct result structure: {type(final_result)}")
+                    if isinstance(final_result, dict):
+                        logger.info(f"Direct result keys: {final_result.keys()}")
+                    
+                    # Update session state
+                    st.session_state.filled_form = final_result
+                    st.session_state.final_form_filled = final_result
                     st.session_state.current_step += 1
+                    
                     # Clear workflow state
                     st.session_state.workflow = None
                     st.session_state.workflow_handler = None
-                    st.session_state.feedback_count = 0
+                    st.session_state.waiting_for_feedback = False
+                    st.session_state.feedback_submitted = False
+                    
+                    # Force a rerun to move to the next step
+                    st.rerun()
+                    
                     return final_result
-                except json.JSONDecodeError as e:
-                    logger.error("Error parsing final result: %s", str(e))
-                    st.error("Error processing the final form data. Please try again.")
-                    return None
-            else:
-                logger.error("Invalid final result format")
-                st.error("Invalid form data received. Please try again.")
-                return None
+            except Exception as e:
+                logger.error(f"Error getting direct result: {str(e)}", exc_info=True)
+            
+            # If we still don't have a result, check if we have filled form data
+            if st.session_state.filled_form:
+                logger.info("Using existing filled form data")
+                return st.session_state.filled_form
+            
+            # If all else fails
+            logger.warning("No result available")
+            st.warning("No result available. Please try again.")
+            return None
                 
         except asyncio.CancelledError:
             logger.warning("Workflow was cancelled")
+            st.warning("The workflow was cancelled. Please try again.")
             return None
             
     except Exception as e:
@@ -493,8 +587,18 @@ def main():
                 asyncio.set_event_loop(st.session_state.event_loop)
             
             # Run the workflow
-            st.session_state.final_form_filled = st.session_state.event_loop.run_until_complete(run_workflow(st.session_state.form_data))
-            logger.info("Workflow result: %s", st.session_state.final_form_filled)
+            result = st.session_state.event_loop.run_until_complete(run_workflow(st.session_state.form_data))
+            logger.info("Workflow result: %s", result)
+            
+            # If we got a final result, store it and move to the next step
+            if result and isinstance(result, dict) and "submission" in result:
+                st.session_state.filled_form = result
+                st.session_state.final_form_filled = result
+                
+                # Move to next step if we have a final result
+                if st.session_state.current_step < 3:
+                    st.session_state.current_step = 3
+                    st.rerun()
     
     # Step 4: Final Submission
     elif st.session_state.current_step == 3:
@@ -509,29 +613,14 @@ def main():
                 st.rerun()
         else:
             try:
-                form_data = st.session_state.filled_form["submission"]
+                form_data = st.session_state.filled_form
                 logger.info("Submission data: %s", form_data)
-                
-                # Display final review
-                st.subheader("📋 Final Review")
-                for entry_id, answer in form_data.items():
-                    # Find the corresponding question from the original form data
-                    question = next(
-                        (field["Question"] for field in st.session_state.form_data if field["Entry_ID"] == entry_id),
-                        "Unknown Question"
-                    )
-                    with st.expander(f"Field: {question}", expanded=True):
-                        st.write("**Entry ID:** ", entry_id)
-                        st.write("**Answer:** ", answer)
-                        st.divider()
-                
                 if st.button("Submit Application", type="primary"):
                     try:
                         # Submit the form using the form handler
                         logger.info("Attempting to submit form to URL: %s", st.session_state.form_url)
                         form_handler = GoogleFormHandler(url=st.session_state.form_url)
                         success = form_handler.submit_form(form_data)
-                        
                         if success:
                             st.success("🎉 Application submitted successfully!")
                             st.balloons()
