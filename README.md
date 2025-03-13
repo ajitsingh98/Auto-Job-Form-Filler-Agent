@@ -1,131 +1,94 @@
-# 📝 Auto-Job-Form-Filler-Agent
+# Auto Job Form Filler Agent 🤖
 
-[![Python 3.11](https://img.shields.io/badge/python-3.11-blue.svg)](https://www.python.org/downloads/release/python-311/)
-[![Streamlit](https://img.shields.io/badge/Streamlit-1.28+-red.svg)](https://streamlit.io)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+An intelligent Streamlit application that automatically fills out job application forms using AI-powered resume parsing and form filling capabilities.
 
-> Revolutionize your job application process! Upload your resume and let AI handle the form filling.
+## Features ✨
 
-## 🌟 Features
+- **Resume Processing**: Upload PDF resumes or provide Google Drive links
+- **AI-Powered Form Filling**: Automatically extracts relevant information from resumes
+- **Interactive Feedback System**: Review and provide feedback on AI-generated responses
+- **Multiple AI Model Support**: Choose from various OpenRouter models
+- **Google Forms Integration**: Seamlessly works with Google Forms
+- **Progress Tracking**: Visual progress indicator for the application process
+- **Error Handling**: Robust error handling and user feedback
 
-- 🤖 AI-powered resume information extraction
-- 📋 Automatic Google Form filling
-- 💡 Interactive feedback system
-- 🔄 Real-time progress tracking
-- 🛡️ Error handling and validation
-- 📱 Responsive web interface
-- 🔒 Secure API key management
+## Prerequisites 📋
 
-## 🚀 Quick Start
+- Python 3.8+
+- OpenRouter API Key
+- Llama Cloud API Key
+- Google Forms URL
 
-### Prerequisites
+## Installation 🚀
 
-- Python 3.11 or higher
-- API Keys:
-  - [OpenRouter API Key](https://openrouter.ai/keys)
-  - [Llama Cloud API Key](https://cloud.llamaindex.ai/)
-
-### Installation
-
+1. Clone the repository:
 ```bash
-# Clone the repository
 git clone https://github.com/yourusername/Auto-Job-Form-Filler-Agent.git
 cd Auto-Job-Form-Filler-Agent
+```
 
-# Create and activate virtual environment
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-
-# Install dependencies
+2. Install dependencies:
+```bash
 pip install -r requirements.txt
 ```
 
-### Running the Application
+3. Set up your API keys:
+   - Get your OpenRouter API key from [OpenRouter](https://openrouter.ai/)
+   - Get your Llama Cloud API key from [Llama Cloud](https://cloud.llamaindex.ai/)
 
+## Usage 💡
+
+1. Run the Streamlit app:
 ```bash
 streamlit run app.py
 ```
 
-## 🎯 How It Works
+2. Follow the steps in the application:
+   - Upload your resume (PDF or Google Drive link)
+   - Enter the Google Form URL
+   - Review and provide feedback on AI-generated responses
+   - Submit the final application
 
-1. **Upload Resume**: 
-   - Support for PDF files (up to 10MB)
-   - Google Drive link integration
-   - AI-powered resume parsing
+## Supported AI Models 🤖
 
-2. **Process Form**:
-   - Enter Google Form URL
-   - Automatic field detection
-   - Smart form analysis
+- Mistral 7B Instruct (Free)
+- DeepSeek R1 (Free)
+- MythoMax L2 13B
+- Llama 2 70B (Free)
+- Claude 2.1
+- GPT-4
+- GPT-3.5 Turbo
 
-3. **Review & Feedback**:
-   - AI-generated responses
-   - Interactive review system
-   - Real-time feedback incorporation
-
-4. **Submit**:
-   - Automatic form submission
-   - Validation checks
-   - Success confirmation
-
-## ⚠️ Limitations
+## Limitations ⚠️
 
 - Maximum 10 form questions supported
 - PDF files only (max 10MB)
-- Processing time varies with form complexity
-- Stable internet connection required
-- API keys required for all features
+- Processing time increases with form complexity
+- Requires stable internet connection
+- API keys are required for all features
 
-## 💡 Best Practices
+## Best Practices 📝
 
 - Use clear, single-page resumes
 - Verify form fields before submission
 - Review AI-generated answers carefully
 - Provide feedback for better results
 
-## 🔧 Technical Stack
-
-- **Frontend**: Streamlit
-- **AI/ML**: 
-  - LlamaIndex for document processing
-  - OpenRouter for LLM integration
-  - HuggingFace embeddings
-- **Form Handling**: Custom Google Form integration
-- **Storage**: Local file system with caching
-
-## 🔒 Security
-
-- API keys are never stored permanently
-- Secure session management
-- Temporary file handling
-- No data retention
-
-## 🤝 Contributing
+## Contributing 🤝
 
 Contributions are welcome! Please feel free to submit a Pull Request.
 
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
-## 📝 License
+## License 📄
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 🙏 Acknowledgments
+## Acknowledgments 🙏
 
-- [LlamaIndex](https://www.llamaindex.ai/) for document processing
-- [OpenRouter](https://openrouter.ai/) for AI capabilities
+- [OpenRouter](https://openrouter.ai/) for AI model access
+- [Llama Cloud](https://cloud.llamaindex.ai/) for resume parsing
 - [Streamlit](https://streamlit.io/) for the web interface
+- [Google Forms](https://www.google.com/forms/about/) for form handling
 
-## 📧 Contact
+## Support 💬
 
-Your Name - [@Ajit](https://x.com/bayesian_walker) - sajit9285@gmail.com
-
-Project Link: [https://github.com/ajitsingh98/Auto-Job-Form-Filler-Agent](https://github.com/ajitsingh98/Auto-Job-Form-Filler-Agent)
-
----
-
-Made with ❤️ by Ajit
+If you encounter any issues or have questions, please open an issue in the GitHub repository.
