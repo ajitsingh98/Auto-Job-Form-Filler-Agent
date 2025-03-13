@@ -2,6 +2,12 @@
 
 An intelligent Streamlit application that automatically fills out job application forms using AI-powered resume parsing and form filling capabilities.
 
+## Demo ✌️
+
+https://github.com/user-attachments/assets/6ba74023-5f78-4920-821f-b823cebb316a
+
+
+
 ## Features ✨
 
 - **Resume Processing**: Upload PDF resumes or provide Google Drive links
