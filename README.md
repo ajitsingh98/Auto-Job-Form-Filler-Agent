@@ -65,28 +65,12 @@ streamlit run app.py
 - GPT-4
 - GPT-3.5 Turbo
 
-## Limitations ⚠️
-
-- Maximum 10 form questions supported
-- PDF files only (max 10MB)
-- Processing time increases with form complexity
-- Requires stable internet connection
-- API keys are required for all features
-
 ## Best Practices 📝
 
 - Use clear, single-page resumes
 - Verify form fields before submission
 - Review AI-generated answers carefully
 - Provide feedback for better results
-
-## Contributing 🤝
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-## License 📄
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## Limitations
 
@@ -121,6 +105,15 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
    - Mobile optimization
    - Offline support
    - Custom templates
+  
+
+## Contributing 🤝
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+## License 📄
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## Acknowledgments 🙏
 
