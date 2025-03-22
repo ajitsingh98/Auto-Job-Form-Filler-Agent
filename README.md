@@ -2,6 +2,8 @@
 
 An intelligent Streamlit application that automatically fills out job application forms using AI-powered resume parsing and form filling capabilities.
 
+Workable APP Link : https://auto-job-form-filler-agent.streamlit.app
+
 ## Demo ✌️
 
 https://github.com/user-attachments/assets/6ba74023-5f78-4920-821f-b823cebb316a
